@@ -1,0 +1,8 @@
+name: iCCDKineticsENV
+dependencies:
+ - python
+ - pandas
+ - numpy
+ - qt
+ - matplotlib
+ - scipy
