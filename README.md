@@ -25,7 +25,7 @@ Launch the app. First, load the initial kinetic, which should include the time z
 
 Next, load the rest of the kinetic files by pressing browse next to the larger box. You will be prompted to load a file and straight afterwards, the corresponding background file. For each file, enter the start time and gate step as before. You can change the order of the files using the move up and move down buttons. Files can be deleted using delete.
 
-Once you are happy with the file list, and all files are in the correct order, press load.
+Once you are happy with the file list, and all files are in the correct order, select the correct delimiter from the drop down menu and press load.  You must select the correct delimiter!
 
 Next, adjust the value of time zero in the appropriate box and press add time axes. The timeslices and kinetics plots should become populated by data from the __first kinetic file only__.
 
