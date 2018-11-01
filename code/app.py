@@ -5,6 +5,7 @@ import numpy as np
 from PyQt5 import QtCore, QtGui ,QtWidgets
 from PyUI import Ui_MainWindow
 from kineticSplice import KineticSplice
+from cosmicRayRemoval import CosmicRayRemoval
 import ctypes
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('app')
       
@@ -52,6 +53,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.deleteButton.clicked.connect(self.deleteRow)
         self.loadButton.clicked.connect(self.loadData)
         self.addTimeAxisButton.clicked.connect(self.addTimeAxes)
+        self.removeCosmicRaysButton.clicked.connect(self.removeCosmicRays)
         self.backgroundSubtractButton.clicked.connect(self.subtractBackgrounds)
         self.joinButton.clicked.connect(self.performJoins)
         self.saveDataButton.clicked.connect(self.saveCompleteKinetic)
@@ -281,6 +283,17 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupKineticsPlot()
         self.plotKinetic()
         self.displayStatus('time axis added successfully', 'green', msecs=4000)
+        
+    def removeCosmicRays(self):
+        for index in self.kineticsDict.keys():
+            kinetic = self.kineticsDict[index][0]
+            crr = CosmicRayRemoval()
+            corrected = crr.removeCosmicRaysPandasDataFrame(kinetic)
+            self.kineticsDict[index][0] = corrected
+        self.dataToPlot = self.kineticsDict[1][0]
+        self.plotTimeSlice()
+        self.plotKinetic()
+        self.displayStatus('removed cosmic rays', 'green', msecs=4000)
             
     def subtractBackgrounds(self):
         backgroundEndTime = int(self.backgroundEndTimeSpinBox.value())
@@ -320,7 +333,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 kspl = KineticSplice(overlappedPairs)
                 scalingFactor = kspl.calculateScalingFactor()
                 toJoin = toJoin*scalingFactor
-                toJoin.drop(overlappedTimes, axis=1, inplace=True)
+                toJoin.drop(overlappedTimes, axis=1, inplace=True)  # should drop everything IN BETWEEN these times!
                 joinedKinetic = joinedKinetic.join(toJoin)
         self.completeKinetic = joinedKinetic
         self.dataToPlot = self.completeKinetic.copy()
