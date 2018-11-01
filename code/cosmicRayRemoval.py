@@ -104,7 +104,7 @@ class CosmicRayRemoval(object):
         b = np.apply_along_axis(self._crremove1d, ax, inarr, **kwarg)
         return b
     
-    def removeCosmicRaysPandasDataFrame(self, df):
+    def removeCosmicRaysPandasDataFrame(self, df, iterations=2):
         '''
         Wraps the numpy methods from Francesco around a Pandas DataFrame
         Allows for direct integration with Kinetic Joining app
@@ -119,6 +119,9 @@ class CosmicRayRemoval(object):
         '''
         numpyArray = df.values
         correctedArray = self._crremove(numpyArray)
+        if iterations > 1:
+            for i in range(iterations-1):
+                correctedArray = self._crremove(correctedArray)
         correctedDF = pd.DataFrame(index=df.index, columns=df.columns, data=correctedArray)
         return correctedDF
         

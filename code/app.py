@@ -16,17 +16,13 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         Ui_MainWindow.__init__(self)
         self.setupUi(self)
         self.setWindowIcon(QtGui.QIcon('../icon.ico'))
-        self.directory = os.path.expanduser('~')
+        self.directory = os.path.join(os.path.expanduser('~'), 'Documents')
         self.placeMarker = '- - -'
-        self.kineticsFilepathsDict = {}
-        self.backgroundFilepathsDict = {}
-        self.kineticsDict = {}
-        self.sliderKeys = {}
         self.timeSlicePlot = self.timeSliceDisplay.canvas
         self.scaleIndividualTimeSlices = False
-        self.dataToPlot = pd.DataFrame()
         self.kineticsPlot = self.kineticDisplay.canvas
         self.setConnections()
+        self.initialiseDataStorage()
         self.setupDelimiters()
         self.displayStatus('application launched', 'blue', msecs=4000)
         
@@ -40,6 +36,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.kineticsDict = {}
         self.sliderKeys = {}
         self.dataToPlot = pd.DataFrame()
+        self.overlappingTimesList = []
     
     def setConnections(self):
         self.firstKineticBrowseButton.clicked.connect(self.firstKineticBrowse)
@@ -63,7 +60,9 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeSliceWlMinSpinBox.valueChanged.connect(self.plotTimeSlice)
         self.timeSliceWlMaxSpinBox.valueChanged.connect(self.plotTimeSlice)
         self.kineticCentreWlSpinBox.valueChanged.connect(self.plotKinetic)
+        self.kineticCentreWlSpinBox.valueChanged.connect(self.plotTimeSlice)
         self.kineticAveragingSpinBox.valueChanged.connect(self.plotKinetic)
+        self.kineticAveragingSpinBox.valueChanged.connect(self.plotTimeSlice)
         self.kineticLogTCheckBox.clicked.connect(self.plotKinetic)
         self.kineticLogYCheckBox.clicked.connect(self.plotKinetic)
         self.kineticNormalisedCheckBox.clicked.connect(self.plotKinetic)
@@ -99,6 +98,23 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.firstKineticFileListWidget.clear()
         self.firstKineticStartTimeListWidget.clear()
         self.firstKineticGateStepListWidget.clear()
+        self.loadButton.setEnabled(True)
+        self.addTimeAxisButton.setEnabled(False)
+        self.removeCosmicRaysButton.setEnabled(False)
+        self.backgroundSubtractButton.setEnabled(False)
+        self.joinButton.setEnabled(False)
+        self.saveDataButton.setEnabled(False)
+        self.saveKineticButton.setEnabled(False)
+        self.kineticCentreWlSpinBox.setEnabled(False)
+        self.kineticAveragingSpinBox.setEnabled(False)
+        self.kineticLogTCheckBox.setEnabled(False)
+        self.kineticLogYCheckBox.setEnabled(False)
+        self.kineticNormalisedCheckBox.setEnabled(False)
+        self.timeSliceWlMaxSpinBox.setEnabled(False)
+        self.timeSliceWlMinSpinBox.setEnabled(False)
+        self.timeSlider.setEnabled(False)
+        self.autoscaleCheckBox.setEnabled(False)
+        self.scaleButton.setEnabled(False)
         self.displayStatus('application reset', 'blue', msecs=4000)
         
 ###############################################################################
@@ -145,11 +161,19 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog = QtWidgets.QMessageBox()
         errorDialog.setIcon(QtWidgets.QMessageBox.Warning)
         errorDialog.setWindowIcon(QtGui.QIcon('../icon.ico'))
-        errorDialog.setWindowTitle('File Format Warning')
+        errorDialog.setWindowTitle('File Load Warning')
         errorDialog.setText('Could not load file(s). App will reset.')
-        errorDialog.setDetailedText('Files must be the original ASCII files from the iCCD')
+        errorDialog.setDetailedText('Files must be the original ASCII files from the iCCD. Make sure that all start times and gate steps have been entered.')
         errorDialog.exec_()
         self.resetApp()
+        
+    def timesError(self):
+        errorDialog = QtWidgets.QMessageBox()
+        errorDialog.setIcon(QtWidgets.QMessageBox.Warning)
+        errorDialog.setWindowIcon(QtGui.QIcon('../icon.ico'))
+        errorDialog.setWindowTitle('File Load Warning')
+        errorDialog.setText('Not all start times or gate steps entered.')
+        errorDialog.exec_()
         
     def firstKineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
@@ -222,21 +246,44 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.removeCurrentItemFromList(self.backgroundFilesListWidget)
         
     def loadData(self):
-        success = self.loadMethod()
-        if not success:
+        blank = False
+        try:
+            timesEntered = self.checkTimesEntered()
+        except AttributeError:
+            blank = True
             self.fileLoadError()
+        if not blank:
+            if timesEntered: 
+                success = self.loadMethod()
+                if not success:
+                    self.fileLoadError()
+            else:
+                self.timesError()
+                
+    def checkTimesEntered(self):
+        timesList = []
+        for index in range(self.startTimesListWidget.count()):
+            timesList.append(str(self.startTimesListWidget.item(index).text()))
+            timesList.append(str(self.gateStepListWidget.item(index).text()))
+        if self.placeMarker in [self.firstKineticStartTimeListWidget.currentItem().text(), self.firstKineticGateStepListWidget.currentItem().text(), *timesList]:
+            return False
+        else:
+            return True
         
     def loadMethod(self):
         delimiter = self.delimiterComboBox.currentText()
         if delimiter == 'tab':
             delimiter = '\t'
-        firstKineticFilePath = self.kineticsFilepathsDict[self.firstKineticFileListWidget.currentItem().text()]
+        try:
+            firstKineticFilePath = self.kineticsFilepathsDict[self.firstKineticFileListWidget.currentItem().text()]
+        except AttributeError:
+            return False
         firstKineticStartTime = int(self.firstKineticStartTimeListWidget.currentItem().text())
         firstKineticGateStep = int(self.firstKineticGateStepListWidget.currentItem().text())
         try:
             firstKinetic = pd.read_csv(firstKineticFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)
         except Exception:
-            self.fileLoadError()
+            return False
         firstKinetic.dropna(axis=1, inplace=True)
         self.kineticsDict[1] = [firstKinetic, firstKineticStartTime, firstKineticGateStep, 'no separate background']
         for index in range(self.kineticsFilesListWidget.count()):
@@ -247,20 +294,22 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             try:
                 kinetic = pd.read_csv(kineticFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)
             except Exception:
-                self.fileLoadError()
+                return False
             kinetic.dropna(axis=1, inplace=True)
             try:
                 background = pd.read_csv(backgroundFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)[1]
             except Exception:
-                self.fileLoadError()
+                return False
             self.kineticsDict[index+2] = [kinetic, kineticStartTime, kineticGateStep, background]
+        self.loadButton.setEnabled(False)
+        self.addTimeAxisButton.setEnabled(True)
         self.displayStatus('all files loaded successfully', 'green', msecs=4000)
         return True
         
 ###############################################################################
 ########################    DATA PROCESSING METHODS    ########################
 ###############################################################################
-            
+    
     @staticmethod
     def constructTimeAxis(timeZero, startTime, gateStep, numPoints):
         axis = np.arange(startTime-timeZero, startTime-timeZero+(numPoints*gateStep), gateStep)
@@ -278,6 +327,19 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             background = self.kineticsDict[index][3]
             self.kineticsDict[index] = [kinetic, background]
         self.dataToPlot = self.kineticsDict[1][0]
+        self.addTimeAxisButton.setEnabled(False)
+        self.removeCosmicRaysButton.setEnabled(True)
+        self.backgroundSubtractButton.setEnabled(True)
+        self.kineticCentreWlSpinBox.setEnabled(True)
+        self.kineticAveragingSpinBox.setEnabled(True)
+        self.kineticLogTCheckBox.setEnabled(True)
+        self.kineticLogYCheckBox.setEnabled(True)
+        self.kineticNormalisedCheckBox.setEnabled(True)
+        self.timeSliceWlMinSpinBox.setEnabled(True)
+        self.timeSliceWlMaxSpinBox.setEnabled(True)
+        self.timeSlider.setEnabled(True)
+        self.autoscaleCheckBox.setEnabled(True)
+        self.scaleButton.setEnabled(True)
         self.setupTimeSlicePlot()
         self.plotTimeSlice()
         self.setupKineticsPlot()
@@ -309,6 +371,9 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dataToPlot = self.kineticsDict[1]
         self.plotTimeSlice()
         self.plotKinetic()
+        self.removeCosmicRaysButton.setEnabled(False)
+        self.backgroundSubtractButton.setEnabled(False)
+        self.joinButton.setEnabled(True)
         self.displayStatus('backgrounds subtracted from all files', 'green', msecs=4000)
             
     def performJoins(self):
@@ -333,7 +398,14 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 kspl = KineticSplice(overlappedPairs)
                 scalingFactor = kspl.calculateScalingFactor()
                 toJoin = toJoin*scalingFactor
-                toJoin.drop(overlappedTimes, axis=1, inplace=True)  # should drop everything IN BETWEEN these times!
+                self.overlappingTimesList.append('###')
+                timesInOverlappingRegion = [t for t in joinedKinetic.columns if min(overlappedTimes) <= t <= max(overlappedTimes)]
+                for t in timesInOverlappingRegion:
+                    if t in overlappedTimes:
+                        self.overlappingTimesList.append(str(t)+'*')
+                    else:
+                        self.overlappingTimesList.append(str(t))
+                toJoin.drop(overlappedTimes, axis=1, inplace=True)
                 joinedKinetic = joinedKinetic.join(toJoin)
         self.completeKinetic = joinedKinetic
         self.dataToPlot = self.completeKinetic.copy()
@@ -341,6 +413,9 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotTimeSlice()
         self.setupKineticsPlot()
         self.plotKinetic()
+        self.joinButton.setEnabled(False)
+        self.saveDataButton.setEnabled(True)
+        self.saveKineticButton.setEnabled(True)
         self.displayStatus('join successful', 'green', msecs=4000)
         return True
         
@@ -388,6 +463,9 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         ax.set_xlim([xmin, xmax])
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Signal (counts)')
+        ax.axvline(self.kineticCentreWlSpinBox.value(), color='0.5', linestyle='-')
+        ax.axvline(self.kineticCentreWlSpinBox.value()-self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
+        ax.axvline(self.kineticCentreWlSpinBox.value()+self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
         self.timeSlicePlot.draw()
         
     def setupKineticsPlot(self):
@@ -437,8 +515,8 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         
     def saveCompleteKinetic(self):
         self.completeKinetic.to_csv(os.path.join(self.directory, 'completeKinetic.csv'))
-        self.completeKinetic.to_csv(os.path.join(self.directory, 'completeKinetic.Dtc'))
-        self.displayStatus('data saved to {0} and {1}'.format(os.path.join(self.directory, 'completeKinetic.csv'), os.path.join(self.directory, 'completeKinetic.Dtc')), 'blue', msecs=4000)
+        np.savetxt(os.path.join(self.directory, 'overlappedTimes.txt'), self.overlappingTimesList, fmt='%s')
+        self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'completeKinetic.csv')), 'blue', msecs=4000)
         
     def saveKineticSlice(self):
         data = self.getKineticSlice()
