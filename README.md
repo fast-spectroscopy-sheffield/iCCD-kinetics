@@ -37,6 +37,10 @@ Finally, press join.
 
 You can now visualise the joined kinetic using the two graphs, save the data using the two save buttons, and reset the app using the red reset button in order to load a new set of files.
 
+#### Known Issues
+
+There is a problem with screen resolutions for the GUI. If the GUI looks weird on your screen, please let me know and I'll try to fix it for you.
+
 #### Future Developments
 
 Eventually the app will be packaged into a proper executable. Features to add include accepting data with no directly overlapping time points and creating a combined metadata file alongside the kinetic.
