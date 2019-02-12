@@ -115,6 +115,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.timeSliceWlMaxSpinBox.setEnabled(False)
         self.timeSliceWlMinSpinBox.setEnabled(False)
         self.timeSlider.setEnabled(False)
+        self.calibrateButton.setEnabled(False)
         self.autoscaleCheckBox.setEnabled(False)
         self.scaleButton.setEnabled(False)
         self.displayStatus('application reset', 'blue', msecs=4000)
@@ -553,5 +554,5 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = App()
-    window.show()
+    window.showMaximized()
     sys.exit(app.exec_())
