@@ -2,6 +2,7 @@ import sys
 import os
 import pandas as pd
 import numpy as np
+from scipy.interpolate import UnivariateSpline as Spline
 from PyQt5 import QtCore, QtGui ,QtWidgets
 from PyUI import Ui_MainWindow
 from kineticSplice import KineticSplice
@@ -39,6 +40,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.overlappingTimesList = []
     
     def setConnections(self):
+        self.calibrationFileBrowseButton.clicked.connect(self.calibrationBrowse)
         self.firstKineticBrowseButton.clicked.connect(self.firstKineticBrowse)
         self.kineticFilesBrowseButton.clicked.connect(self.kineticBrowse)
         self.kineticsFilesListWidget.itemClicked.connect(self.fileListSelectionChanged)
@@ -174,6 +176,16 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog.setWindowTitle('File Load Warning')
         errorDialog.setText('Not all start times or gate steps entered.')
         errorDialog.exec_()
+        
+    def calibrationBrowse(self):
+        filetypes = 'CSV (*.csv)'
+        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'load calibration file', os.path.join(os.path.dirname(os.getcwd()), 'calibration_files'), filetypes)[0]
+        if fname != '':
+            self.calibrationFileLineEdit.setText(fname)
+            try:
+                self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',', squeeze=True)
+            except Exception:
+                self.fileLoadError()
         
     def firstKineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
@@ -414,6 +426,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupKineticsPlot()
         self.plotKinetic()
         self.joinButton.setEnabled(False)
+        self.calibrateButton.setEnabled(True)
         self.saveDataButton.setEnabled(True)
         self.saveKineticButton.setEnabled(True)
         self.displayStatus('join successful', 'green', msecs=4000)
@@ -427,6 +440,17 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog.setText('No Overlapping Time Points Found. App will reset.')
         errorDialog.exec_()
         self.resetApp()
+        
+    def applyCalibration(self):
+        try:
+            spl = Spline(self.calibration.index, self.calibration.data, s=0)
+            reindexed_calibration = pd.Series(index=self.completeKinetic.index, data=spl(self.completeKinetic.index))
+            self.completeKinetic *= reindexed_calibration
+            self.plotTimeSlice()
+            self.plotKinetic()
+        except AttributeError:
+            self.displayStatus('no calibration file loaded', 'blue')
+        
         
 ###############################################################################
 #######################    GRAPH PLOTTING METHODS    ##########################
