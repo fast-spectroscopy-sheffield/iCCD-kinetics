@@ -451,6 +451,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.completeKinetic *= reindexed_calibration
             self.plotTimeSlice()
             self.plotKinetic()
+            self.calibrateButton.setEnabled(False)
             self.displayStatus('calibration applied', 'green', msecs=4000)
         except AttributeError:
             self.displayStatus('no calibration file loaded', 'blue', msecs=4000)

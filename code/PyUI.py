@@ -387,7 +387,7 @@ class Ui_MainWindow(object):
         self.kineticsGbox.setSizePolicy(sizePolicy)
         self.kineticsGbox.setObjectName("kineticsGbox")
         self.layoutWidget2 = QtWidgets.QWidget(self.kineticsGbox)
-        self.layoutWidget2.setGeometry(QtCore.QRect(10, 20, 511, 321))
+        self.layoutWidget2.setGeometry(QtCore.QRect(10, 20, 521, 331))
         self.layoutWidget2.setObjectName("layoutWidget2")
         self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.layoutWidget2)
         self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
