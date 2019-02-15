@@ -3,15 +3,16 @@ import os
 import pandas as pd
 import numpy as np
 from scipy.interpolate import UnivariateSpline as Spline
-from PyQt5 import QtCore, QtGui ,QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyUI import Ui_MainWindow
 from kineticSplice import KineticSplice
 from cosmicRayRemoval import CosmicRayRemoval
 import ctypes
 ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('app')
-      
+
+
 class App(QtWidgets.QMainWindow, Ui_MainWindow):
-    
+
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
         Ui_MainWindow.__init__(self)
@@ -26,11 +27,11 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.initialiseDataStorage()
         self.setupDelimiters()
         self.displayStatus('application launched', 'blue', msecs=4000)
-        
+
 ###############################################################################
 ######################    INITIALISATION METHODS    ###########################
 ###############################################################################
-        
+
     def initialiseDataStorage(self):
         self.kineticsFilepathsDict = {}
         self.backgroundFilepathsDict = {}
@@ -38,7 +39,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.sliderKeys = {}
         self.dataToPlot = pd.DataFrame()
         self.overlappingTimesList = []
-    
+
     def setConnections(self):
         self.calibrationFileBrowseButton.clicked.connect(self.calibrationBrowse)
         self.firstKineticBrowseButton.clicked.connect(self.firstKineticBrowse)
@@ -70,14 +71,14 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.kineticNormalisedCheckBox.clicked.connect(self.plotKinetic)
         self.saveKineticButton.clicked.connect(self.saveKineticSlice)
         self.resetButton.clicked.connect(self.resetApp)
-        
+
     def setupDelimiters(self):
         self.delimiterComboBox.addItem('tab')
         self.delimiterComboBox.addItem(',')
         self.delimiterComboBox.addItem(':')
         self.delimiterComboBox.addItem(';')
         self.delimiterComboBox.setCurrentIndex(0)
-        
+
 ###############################################################################
 #########################    GENERAL METHODS    ###############################
 ###############################################################################
@@ -86,7 +87,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.statusBar.clearMessage()
         self.statusBar.setStyleSheet('QStatusBar{color:'+colour+';}')
         self.statusBar.showMessage(message, msecs=msecs)
-        
+
     def resetApp(self):
         self.timeSlicePlot.ax.cla()
         self.timeSlicePlot.draw()
@@ -119,33 +120,33 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.autoscaleCheckBox.setEnabled(False)
         self.scaleButton.setEnabled(False)
         self.displayStatus('application reset', 'blue', msecs=4000)
-        
+
 ###############################################################################
 ########################    FILE LOADING METHODS    ###########################
 ###############################################################################
-        
+
     def fileListSelectionChanged(self):
         index = self.kineticsFilesListWidget.currentRow()
         self.trackListSelection(index)
-        
+
     def startTimeSelectionChanged(self):
         index = self.startTimesListWidget.currentRow()
         self.trackListSelection(index)
-        
+
     def gateStepSelectionChanged(self):
         index = self.gateStepListWidget.currentRow()
         self.trackListSelection(index)
-        
+
     def backgroundListSelectionChanged(self):
         index = self.backgroundFilesListWidget.currentRow()
         self.trackListSelection(index)
-        
+
     def trackListSelection(self, index):
         self.kineticsFilesListWidget.setCurrentRow(index)
         self.startTimesListWidget.setCurrentRow(index)
         self.gateStepListWidget.setCurrentRow(index)
         self.backgroundFilesListWidget.setCurrentRow(index)
-        
+
     @staticmethod
     def addItemToList(listWidget, string, editable=False):
         item = QtWidgets.QListWidgetItem(string)
@@ -153,13 +154,13 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
         listWidget.addItem(item)
         listWidget.setCurrentItem(item)
-        
+
     @staticmethod
     def removeCurrentItemFromList(listWidget):
         row = listWidget.currentRow()
         item = listWidget.takeItem(row)
         del(item)
-        
+
     def fileLoadError(self):
         errorDialog = QtWidgets.QMessageBox()
         errorDialog.setIcon(QtWidgets.QMessageBox.Warning)
@@ -169,7 +170,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog.setDetailedText('Files must be the original ASCII files from the iCCD. Make sure that all start times and gate steps have been entered.')
         errorDialog.exec_()
         self.resetApp()
-        
+
     def timesError(self):
         errorDialog = QtWidgets.QMessageBox()
         errorDialog.setIcon(QtWidgets.QMessageBox.Warning)
@@ -177,7 +178,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog.setWindowTitle('File Load Warning')
         errorDialog.setText('Not all start times or gate steps entered.')
         errorDialog.exec_()
-        
+
     def calibrationBrowse(self):
         filetypes = 'CSV (*.csv)'
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'load calibration file', os.path.join(os.path.dirname(os.getcwd()), 'calibration_files'), filetypes)[0]
@@ -187,7 +188,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',', squeeze=True)
             except Exception:
                 self.fileLoadError()
-        
+
     def firstKineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'load first kinetic', self.directory, filetypes)[0]
@@ -201,7 +202,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.addItemToList(self.firstKineticStartTimeListWidget, self.placeMarker, editable=True)
             self.addItemToList(self.firstKineticGateStepListWidget, self.placeMarker, editable=True)
             self.kineticsFilepathsDict[os.path.basename(fname)] = fname
-    
+
     def kineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
         kfname = QtWidgets.QFileDialog.getOpenFileName(self, 'load kinetic', self.directory, filetypes)[0]
@@ -221,7 +222,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.removeCurrentItemFromList(self.kineticsFilesListWidget)
                 self.removeCurrentItemFromList(self.startTimesListWidget)
                 self.removeCurrentItemFromList(self.gateStepListWidget)
-        
+
     def moveRowUp(self):
         row = self.kineticsFilesListWidget.currentRow()
         itemDataFile = self.kineticsFilesListWidget.takeItem(row)
@@ -236,7 +237,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.startTimesListWidget.setCurrentItem(itemStartTime)
         self.gateStepListWidget.setCurrentItem(itemGateStep)
         self.backgroundFilesListWidget.setCurrentItem(itemBackgroundFile)
-        
+
     def moveRowDown(self):
         row = self.kineticsFilesListWidget.currentRow()
         itemDataFile = self.kineticsFilesListWidget.takeItem(row)
@@ -251,13 +252,13 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.startTimesListWidget.setCurrentItem(itemStartTime)
         self.gateStepListWidget.setCurrentItem(itemGateStep)
         self.backgroundFilesListWidget.setCurrentItem(itemBackgroundFile)
-        
+
     def deleteRow(self):
         self.removeCurrentItemFromList(self.kineticsFilesListWidget)
         self.removeCurrentItemFromList(self.startTimesListWidget)
         self.removeCurrentItemFromList(self.gateStepListWidget)
         self.removeCurrentItemFromList(self.backgroundFilesListWidget)
-        
+
     def loadData(self):
         blank = False
         try:
@@ -266,13 +267,13 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             blank = True
             self.fileLoadError()
         if not blank:
-            if timesEntered: 
+            if timesEntered:
                 success = self.loadMethod()
                 if not success:
                     self.fileLoadError()
             else:
                 self.timesError()
-                
+
     def checkTimesEntered(self):
         timesList = []
         for index in range(self.startTimesListWidget.count()):
@@ -282,7 +283,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             return False
         else:
             return True
-        
+
     def loadMethod(self):
         delimiter = self.delimiterComboBox.currentText()
         if delimiter == 'tab':
@@ -318,16 +319,16 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.addTimeAxisButton.setEnabled(True)
         self.displayStatus('all files loaded successfully', 'green', msecs=4000)
         return True
-        
+
 ###############################################################################
 ########################    DATA PROCESSING METHODS    ########################
 ###############################################################################
-    
+
     @staticmethod
     def constructTimeAxis(timeZero, startTime, gateStep, numPoints):
         axis = np.arange(startTime-timeZero, startTime-timeZero+(numPoints*gateStep), gateStep)
         return axis
-    
+
     def addTimeAxes(self):
         timeZero = int(self.timeZeroSpinBox.value())
         for index in self.kineticsDict.keys():
@@ -358,7 +359,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupKineticsPlot()
         self.plotKinetic()
         self.displayStatus('time axis added successfully', 'green', msecs=4000)
-        
+
     def removeCosmicRays(self):
         for index in self.kineticsDict.keys():
             kinetic = self.kineticsDict[index][0]
@@ -369,7 +370,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.plotTimeSlice()
         self.plotKinetic()
         self.displayStatus('removed cosmic rays', 'green', msecs=4000)
-            
+
     def subtractBackgrounds(self):
         backgroundEndTime = int(self.backgroundEndTimeSpinBox.value())
         for index in self.kineticsDict.keys():
@@ -388,12 +389,12 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.backgroundSubtractButton.setEnabled(False)
         self.joinButton.setEnabled(True)
         self.displayStatus('backgrounds subtracted from all files', 'green', msecs=4000)
-            
+
     def performJoins(self):
         success = self.joinMethod()
         if not success:
             self.noOverlapError()
-    
+
     def joinMethod(self):
         for index in self.kineticsDict.keys():
             if index == 1:
@@ -432,7 +433,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveKineticButton.setEnabled(True)
         self.displayStatus('join successful', 'green', msecs=4000)
         return True
-        
+
     def noOverlapError(self):
         errorDialog = QtWidgets.QMessageBox()
         errorDialog.setIcon(QtWidgets.QMessageBox.Warning)
@@ -441,7 +442,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         errorDialog.setText('No Overlapping Time Points Found. App will reset.')
         errorDialog.exec_()
         self.resetApp()
-        
+
     def applyCalibration(self):
         try:
             spl = Spline(self.calibration.index, self.calibration.data, s=0)
@@ -451,29 +452,29 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.plotKinetic()
         except AttributeError:
             self.displayStatus('no calibration file loaded', 'blue')
-        
-        
+
+
 ###############################################################################
 #######################    GRAPH PLOTTING METHODS    ##########################
 ###############################################################################
-        
+
     def setupTimeSlicePlot(self):
         self.setupSlider(self.dataToPlot.columns)
         self.timeSliceWlMinSpinBox.setValue(np.floor(min(self.dataToPlot.index)))
-        self.timeSliceWlMaxSpinBox.setValue(np.ceil(max(self.dataToPlot.index)))      
-        
+        self.timeSliceWlMaxSpinBox.setValue(np.ceil(max(self.dataToPlot.index)))
+
     def setupSlider(self, times):
         for count, time in enumerate(times):
             self.sliderKeys[count] = time
         self.timeSlider.setMinimum(0)
         self.timeSlider.setMaximum(len(times)-1)
         self.timeSlider.setValue(0)
-        
+
     def scaleButtonClicked(self):
         self.scaleIndividualTimeSlices = True
         self.plotTimeSlice()
         self.scaleIndividualTimeSlices = False
-        
+
     def plotTimeSlice(self):
         time = self.sliderKeys[int(self.timeSlider.value())]
         data = self.dataToPlot[time]
@@ -491,14 +492,15 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         ax.axvline(self.kineticCentreWlSpinBox.value(), color='0.5', linestyle='-')
         ax.axvline(self.kineticCentreWlSpinBox.value()-self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
         ax.axvline(self.kineticCentreWlSpinBox.value()+self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
+        self.timeSlicePlot.tight_layout()
         self.timeSlicePlot.draw()
-        
+
     def setupKineticsPlot(self):
         self.kineticCentreWlSpinBox.setValue(np.round(np.mean(self.dataToPlot.index)))
         self.kineticLogTCheckBox.setChecked(True)
         self.kineticLogYCheckBox.setChecked(True)
         self.kineticNormalisedCheckBox.setChecked(True)
-        
+
     def getKineticSlice(self):
         centreWavelength = self.kineticCentreWlSpinBox.value()
         plusMinus = self.kineticAveragingSpinBox.value()
@@ -506,7 +508,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         data = data[data.index < centreWavelength+plusMinus]
         data = data.mean()
         return data
-    
+
     def plotKinetic(self):
         ms = 4
         mc = 'bo'
@@ -532,17 +534,18 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             ax.plot(data.index, data, mc, markersize=ms)
         ax.set_xlabel('Time (ns)')
         ax.set_ylabel(ylabel)
+        self.kineticsPlot.tight_layout()
         self.kineticsPlot.draw()
-        
+
 ###############################################################################
 ##########################    SAVING METHODS    ###############################
 ###############################################################################
-        
+
     def saveCompleteKinetic(self):
         self.completeKinetic.to_csv(os.path.join(self.directory, 'completeKinetic.csv'))
         np.savetxt(os.path.join(self.directory, 'overlappedTimes.txt'), self.overlappingTimesList, fmt='%s')
         self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'completeKinetic.csv')), 'blue', msecs=4000)
-        
+
     def saveKineticSlice(self):
         data = self.getKineticSlice()
         centreWavelength = self.kineticCentreWlSpinBox.value()
@@ -550,7 +553,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         data.to_csv(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus)))
         self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus))), 'blue', msecs=4000)
 
-        
+
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = App()

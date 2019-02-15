@@ -14,6 +14,9 @@ class MplCanvas(Canvas):
         Canvas.__init__(self, self.fig)
         Canvas.setSizePolicy(self, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         Canvas.updateGeometry(self)
+        
+    def tight_layout(self):
+        self.fig.tight_layout()
 
 # Matplotlib widget
 class MplWidget(QtWidgets.QWidget):
@@ -23,3 +26,5 @@ class MplWidget(QtWidgets.QWidget):
         self.vbl = QtWidgets.QVBoxLayout()         # Set box for plotting
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.updateGeometry()
