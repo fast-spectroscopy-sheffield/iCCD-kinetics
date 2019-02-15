@@ -56,6 +56,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.removeCosmicRaysButton.clicked.connect(self.removeCosmicRays)
         self.backgroundSubtractButton.clicked.connect(self.subtractBackgrounds)
         self.joinButton.clicked.connect(self.performJoins)
+        self.calibrateButton.clicked.connect(self.applyCalibration)
         self.saveDataButton.clicked.connect(self.saveCompleteKinetic)
         self.timeSlider.valueChanged.connect(self.plotTimeSlice)
         self.autoscaleCheckBox.clicked.connect(self.plotTimeSlice)
@@ -445,13 +446,14 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def applyCalibration(self):
         try:
-            spl = Spline(self.calibration.index, self.calibration.data, s=0)
+            spl = Spline(self.calibration.index, self.calibration.values, s=0)
             reindexed_calibration = pd.Series(index=self.completeKinetic.index, data=spl(self.completeKinetic.index))
             self.completeKinetic *= reindexed_calibration
             self.plotTimeSlice()
             self.plotKinetic()
+            self.displayStatus('calibration applied', 'green', msecs=4000)
         except AttributeError:
-            self.displayStatus('no calibration file loaded', 'blue')
+            self.displayStatus('no calibration file loaded', 'blue', msecs=4000)
 
 
 ###############################################################################
