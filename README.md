@@ -12,7 +12,7 @@ conda env create -f environment.yml
 ```
 The app can then be launched as follows. First open an anaconda prompt. You need to activate the environment first:
 ```
-conda activate iCCDKineticsENV
+conda activate iccd-kinetics-env
 ```
 Then `cd` your way to the folder where you downloaded the python code and run
 ```

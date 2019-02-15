@@ -1,8 +1,42 @@
-name: iCCDKineticsENV
+name: iccd-kinetics-env
+channels:
+  - defaults
 dependencies:
- - python
- - pandas
- - numpy
- - qt
- - matplotlib
- - scipy
+  - blas=1.0
+  - ca-certificates=2019.1.23
+  - certifi=2018.11.29
+  - cycler=0.10.0
+  - freetype=2.9.1
+  - icc_rt=2019.0.0
+  - icu=58.2
+  - intel-openmp=2019.1
+  - jpeg=9b
+  - kiwisolver=1.0.1
+  - libpng=1.6.36
+  - matplotlib=3.0.2
+  - mkl=2019.1
+  - mkl_fft=1.0.10
+  - mkl_random=1.0.2
+  - numpy=1.15.4
+  - numpy-base=1.15.4
+  - openssl=1.1.1a
+  - pandas=0.24.1
+  - pip=19.0.1
+  - pyparsing=2.3.1
+  - pyqt=5.9.2
+  - python=3.7.2
+  - python-dateutil=2.7.5
+  - pytz=2018.9
+  - qt=5.9.7
+  - scipy=1.2.0
+  - setuptools=40.7.3
+  - sip=4.19.8
+  - six=1.12.0
+  - sqlite=3.26.0
+  - tornado=5.1.1
+  - vc=14.1
+  - vs2015_runtime=14.15.26706
+  - wheel=0.32.3
+  - wincertstore=0.2
+  - zlib=1.2.11
+
