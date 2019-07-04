@@ -420,7 +420,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                         self.overlappingTimesList.append(str(t)+'*')
                     else:
                         self.overlappingTimesList.append(str(t))
-                toJoin.drop(overlappedTimes, axis=1, inplace=True)
+                joinedKinetic.drop(joinedKinetic.columns[joinedKinetic.columns >= overlappedTimes[0]], axis=1, inplace=True)
                 joinedKinetic = joinedKinetic.join(toJoin)
         self.completeKinetic = joinedKinetic
         self.dataToPlot = self.completeKinetic.copy()
@@ -448,7 +448,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         try:
             spl = Spline(self.calibration.index, self.calibration.values, s=0)
             reindexed_calibration = pd.Series(index=self.completeKinetic.index, data=spl(self.completeKinetic.index))
-            self.completeKinetic *= reindexed_calibration
+            self.completeKinetic = self.completeKinetic.mul(reindexed_calibration, axis=0)
             self.plotTimeSlice()
             self.plotKinetic()
             self.calibrateButton.setEnabled(False)
