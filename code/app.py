@@ -2,6 +2,7 @@ import sys
 import os
 import pandas as pd
 import numpy as np
+from matplotlib import pyplot as plt
 from scipy.interpolate import UnivariateSpline as Spline
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyUI import Ui_MainWindow
@@ -405,22 +406,16 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 overlappedTimes = np.intersect1d(np.array(joinedKinetic.columns), np.array(toJoin.columns))
                 if overlappedTimes.size == 0:
                     return False
-                overlappedPairs = []
-                for time in overlappedTimes:
-                    alreadyJoinedArray = np.array(joinedKinetic[time])
-                    toJoinArray = np.array(toJoin[time])
-                    overlappedPairs.append((alreadyJoinedArray, toJoinArray))
-                kspl = KineticSplice(overlappedPairs)
+                overlappedTime = min(overlappedTimes)
+                alreadyJoinedArray = np.array(joinedKinetic[overlappedTime])
+                toJoinArray = np.array(toJoin[overlappedTime])
+                overlappedPair = (alreadyJoinedArray, toJoinArray)
+                kspl = KineticSplice(overlappedPair)
                 scalingFactor = kspl.calculateScalingFactor()
+                self.plot_joins(index, joinedKinetic.index.values, overlappedPair, overlappedTime, scalingFactor)
                 toJoin = toJoin*scalingFactor
-                self.overlappingTimesList.append('###')
-                timesInOverlappingRegion = [t for t in joinedKinetic.columns if min(overlappedTimes) <= t <= max(overlappedTimes)]
-                for t in timesInOverlappingRegion:
-                    if t in overlappedTimes:
-                        self.overlappingTimesList.append(str(t)+'*')
-                    else:
-                        self.overlappingTimesList.append(str(t))
-                joinedKinetic.drop(joinedKinetic.columns[joinedKinetic.columns >= overlappedTimes[0]], axis=1, inplace=True)
+                self.overlappingTimesList.append(str(overlappedTime))
+                joinedKinetic.drop(joinedKinetic.columns[joinedKinetic.columns >= overlappedTime], axis=1, inplace=True)
                 joinedKinetic = joinedKinetic.join(toJoin)
         self.completeKinetic = joinedKinetic
         self.dataToPlot = self.completeKinetic.copy()
@@ -434,6 +429,20 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.saveKineticButton.setEnabled(True)
         self.displayStatus('join successful', 'green', msecs=4000)
         return True
+    
+    def plot_joins(self, index, x, overlappedPair, overlappedTime, scalingFactor):
+        savedir = os.path.join(self.directory, 'kinetic_joins')
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
+        fig = plt.figure()
+        plt.plot(x, overlappedPair[0], 'k-', label='1st')
+        plt.plot(x, scalingFactor*overlappedPair[1], 'r-', label='2nd')
+        plt.legend()
+        plt.title('t = {0} ns'.format(overlappedTime))
+        plt.xlabel('wavelength (nm)')
+        plt.ylabel('PL (arb.)')
+        fig.savefig(os.path.join(savedir, 'join_{0}.png'.format(index)), format='png', dpi=300, bbox_inches='tight')
+        plt.close(fig=fig)        
 
     def noOverlapError(self):
         errorDialog = QtWidgets.QMessageBox()
@@ -546,7 +555,10 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def saveCompleteKinetic(self):
         self.completeKinetic.to_csv(os.path.join(self.directory, 'completeKinetic.csv'))
-        np.savetxt(os.path.join(self.directory, 'overlappedTimes.txt'), self.overlappingTimesList, fmt='%s')
+        savedir = os.path.join(self.directory, 'kinetic_joins')
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
+        np.savetxt(os.path.join(savedir, 'overlappedTimes.txt'), self.overlappingTimesList, fmt='%s')
         self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'completeKinetic.csv')), 'blue', msecs=4000)
 
     def saveKineticSlice(self):
