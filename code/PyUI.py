@@ -311,7 +311,7 @@ class Ui_MainWindow(object):
         self.label_15.setObjectName("label_15")
         self.verticalLayout_6.addWidget(self.label_15)
         self.timeZeroSpinBox = QtWidgets.QDoubleSpinBox(self.layoutWidget1)
-        self.timeZeroSpinBox.setMaximum(300.0)
+        self.timeZeroSpinBox.setMaximum(10000.0)
         self.timeZeroSpinBox.setProperty("value", 151.0)
         self.timeZeroSpinBox.setObjectName("timeZeroSpinBox")
         self.verticalLayout_6.addWidget(self.timeZeroSpinBox)
