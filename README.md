@@ -21,7 +21,7 @@ python app.py
 
 #### Instructions for Use
 
-Launch the app. If you want to apply the spectral sensitivity correction, load the appropriate calibration file using the browse button.
+Launch the app. If you want to apply the spectral sensitivity correction, load the appropriate calibration file using the browse button. These files probably need updating though.
 
 Next, load the initial kinetic, which should include the time zero point, by pressing the browse button adjacent to the first line entry. Choose the file, then enter the start time and gate step by double clicking the three dashes in the appropriate boxes.
 
@@ -31,7 +31,7 @@ Once you are happy with the file list, and all files are in the correct order, p
 
 Next, adjust the value of time zero in the appropriate box and press add time axes. The timeslices and kinetics plots should become populated by data from the __first kinetic file only__.
 
-If you want to, press remove cosmic rays. Algorithm is not perfect, it reduces rather than removes the rays.
+If you want to, press remove cosmic rays. Algorithm is not perfect and needs some work, it reduces rather than removes the rays.
 
 Use the slider below the timeslices graph to move through the timepoints. Select an appropriate background end point (the latest time before the laser pulse arrives) and press subtract backgrounds.
 
