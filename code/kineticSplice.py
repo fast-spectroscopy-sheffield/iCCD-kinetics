@@ -4,25 +4,16 @@ from scipy.interpolate import UnivariateSpline
 
 class KineticSplice(object):
     
-    def __init__(self, overlappedPairs):
-        self._overlappedPairs = overlappedPairs
+    def __init__(self, overlappedPair):
+        self._overlappedPair = overlappedPair
             
     def _calculateInitialGuess(self):
-        initialGuess = []
-        for pair in self._overlappedPairs:
-            scalingFactorGuess = pair[0].max()/pair[1].max()
-            initialGuess.append(scalingFactorGuess)
-        initialGuess = np.array(initialGuess).mean()
+        initialGuess = self._overlappedPair[0].max()/self._overlappedPair[1].max()
         return initialGuess
     
     def _constructDataAndFittingVector(self):
-        for index, pair in enumerate(self._overlappedPairs):
-            if index == 0:
-                data = pair[0]
-                vector = pair[1]
-            else:
-                data = np.append(data, pair[0])
-                vector = np.append(vector, pair[1])
+        data = self._overlappedPair[0]
+        vector = self._overlappedPair[1]
         return data, vector
     
     @staticmethod
