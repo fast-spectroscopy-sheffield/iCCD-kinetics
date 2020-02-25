@@ -71,6 +71,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.kineticLogTCheckBox.clicked.connect(self.plotKinetic)
         self.kineticLogYCheckBox.clicked.connect(self.plotKinetic)
         self.kineticNormalisedCheckBox.clicked.connect(self.plotKinetic)
+        self.kineticIntegratedCheckBox.clicked.connect(self.plotKinetic)
         self.saveKineticButton.clicked.connect(self.saveKineticSlice)
         self.resetButton.clicked.connect(self.resetApp)
 
@@ -103,6 +104,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.firstKineticFileListWidget.clear()
         self.firstKineticStartTimeListWidget.clear()
         self.firstKineticGateStepListWidget.clear()
+        self.firstKineticBackgroundFileListWidget.clear()
         self.loadButton.setEnabled(True)
         self.addTimeAxisButton.setEnabled(False)
         self.removeCosmicRaysButton.setEnabled(False)
@@ -193,17 +195,23 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def firstKineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
-        fname = QtWidgets.QFileDialog.getOpenFileName(self, 'load first kinetic', self.directory, filetypes)[0]
-        if fname != '':
-            self.directory = os.path.dirname(fname)
+        kfname = QtWidgets.QFileDialog.getOpenFileName(self, 'load first kinetic', self.directory, filetypes)[0]
+        if kfname != '':
+            self.directory = os.path.dirname(kfname)
             if self.firstKineticFileListWidget.count() == 1:
                 self.firstKineticFileListWidget.clear()
                 self.firstKineticStartTimeListWidget.clear()
                 self.firstKineticGateStepListWidget.clear()
-            self.addItemToList(self.firstKineticFileListWidget, os.path.basename(fname))
+            self.addItemToList(self.firstKineticFileListWidget, os.path.basename(kfname))
             self.addItemToList(self.firstKineticStartTimeListWidget, self.placeMarker, editable=True)
             self.addItemToList(self.firstKineticGateStepListWidget, self.placeMarker, editable=True)
-            self.kineticsFilepathsDict[os.path.basename(fname)] = fname
+            self.kineticsFilepathsDict[os.path.basename(kfname)] = kfname
+            if not self.backgroundCheckBox.isChecked():
+                bfname = QtWidgets.QFileDialog.getOpenFileName(self, 'load background', self.directory, filetypes)[0]
+                if bfname != '':
+                    self.directory = os.path.dirname(bfname)
+                    self.addItemToList(self.firstKineticBackgroundFileListWidget, os.path.basename(bfname))
+                    self.backgroundFilepathsDict[os.path.basename(kfname)] = bfname
 
     def kineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
@@ -302,6 +310,16 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             return False
         firstKinetic.dropna(axis=1, inplace=True)
         self.kineticsDict[1] = [firstKinetic, firstKineticStartTime, firstKineticGateStep, 'no separate background']
+        if not self.backgroundCheckBox.isChecked():
+            try:
+                firstKineticBackgroundFilePath = self.backgroundFilepathsDict[self.firstKineticFileListWidget.currentItem().text()]
+            except AttributeError:
+                return False
+            try:
+                firstKineticBackground = pd.read_csv(firstKineticBackgroundFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)[1]
+            except Exception:
+                return False
+            self.kineticsDict[1] = [firstKinetic, firstKineticStartTime, firstKineticGateStep, firstKineticBackground]
         for index in range(self.kineticsFilesListWidget.count()):
             kineticFilePath = self.kineticsFilepathsDict[self.kineticsFilesListWidget.item(index).text()]
             kineticStartTime = int(self.startTimesListWidget.item(index).text())
@@ -377,7 +395,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         backgroundEndTime = int(self.backgroundEndTimeSpinBox.value())
         for index in self.kineticsDict.keys():
             kinetic = self.kineticsDict[index][0]
-            if index == 1:
+            if index == 1 and self.backgroundCheckBox.isChecked():
                 backgroundTimes = kinetic.columns[kinetic.columns <= backgroundEndTime]
                 background = kinetic[backgroundTimes].mean(axis=1)
             else:
@@ -501,9 +519,10 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         ax.set_xlim([xmin, xmax])
         ax.set_xlabel('Wavelength (nm)')
         ax.set_ylabel('Signal (counts)')
-        ax.axvline(self.kineticCentreWlSpinBox.value(), color='0.5', linestyle='-')
-        ax.axvline(self.kineticCentreWlSpinBox.value()-self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
-        ax.axvline(self.kineticCentreWlSpinBox.value()+self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
+        if not self.kineticIntegratedCheckBox.isChecked():
+            ax.axvline(self.kineticCentreWlSpinBox.value(), color='0.5', linestyle='-')
+            ax.axvline(self.kineticCentreWlSpinBox.value()-self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
+            ax.axvline(self.kineticCentreWlSpinBox.value()+self.kineticAveragingSpinBox.value(), color='0.5', linestyle=':')
         self.timeSlicePlot.tight_layout()
         self.timeSlicePlot.draw()
 
@@ -514,11 +533,14 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.kineticNormalisedCheckBox.setChecked(True)
 
     def getKineticSlice(self):
-        centreWavelength = self.kineticCentreWlSpinBox.value()
-        plusMinus = self.kineticAveragingSpinBox.value()
-        data = self.dataToPlot[self.dataToPlot.index > centreWavelength-plusMinus]
-        data = data[data.index < centreWavelength+plusMinus]
-        data = data.mean()
+        if self.kineticIntegratedCheckBox.isChecked():
+            data = self.dataToPlot.apply(lambda x: np.trapz(x.values, x=x.index.values))
+        else:
+            centreWavelength = self.kineticCentreWlSpinBox.value()
+            plusMinus = self.kineticAveragingSpinBox.value()
+            data = self.dataToPlot[self.dataToPlot.index > centreWavelength-plusMinus]
+            data = data[data.index < centreWavelength+plusMinus]
+            data = data.mean()
         return data
 
     def plotKinetic(self):
@@ -563,10 +585,14 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def saveKineticSlice(self):
         data = self.getKineticSlice()
-        centreWavelength = self.kineticCentreWlSpinBox.value()
-        plusMinus = self.kineticAveragingSpinBox.value()
-        data.to_csv(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus)))
-        self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus))), 'blue', msecs=4000)
+        if self.kineticIntegratedCheckBox.isChecked():
+            data.to_csv(os.path.join(self.directory, 'integratedKinetic.csv'))
+            self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'integratedKinetic.csv')), 'blue', msecs=4000)
+        else:
+            centreWavelength = self.kineticCentreWlSpinBox.value()
+            plusMinus = self.kineticAveragingSpinBox.value()
+            data.to_csv(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus)))
+            self.displayStatus('data saved to {0}'.format(os.path.join(self.directory, 'kineticSlice{0}pm{1}.csv'.format(centreWavelength, plusMinus))), 'blue', msecs=4000)
 
 
 if __name__ == "__main__":

@@ -168,33 +168,30 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_12">
+       <layout class="QVBoxLayout" name="verticalLayout_12" stretch="0,0">
         <item>
-         <widget class="QLabel" name="label_13">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+         <widget class="QCheckBox" name="backgroundCheckBox">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>13</height>
+           </size>
           </property>
           <property name="text">
-           <string>Background File</string>
+           <string>Use period before pulse for first background </string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="firstBackgroundLineEdit">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="text">
-           <string>         will use the period before the pulse arrives to calculate the background</string>
+         <widget class="QListWidget" name="firstKineticBackgroundFileListWidget">
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>20</height>
+           </size>
           </property>
          </widget>
         </item>
@@ -722,6 +719,13 @@
                  </layout>
                 </item>
                </layout>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="kineticIntegratedCheckBox">
+                <property name="text">
+                 <string>Integrated</string>
+                </property>
+               </widget>
               </item>
               <item>
                <layout class="QVBoxLayout" name="verticalLayout">
