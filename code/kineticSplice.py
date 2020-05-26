@@ -28,6 +28,6 @@ class KineticSplice(object):
         x = range(len(data))
         initialGuess = self._calculateInitialGuess()
         popt, pcov = curve_fit(lambda x, scalingFactor: self._splineFittingFunction(x, vector, scalingFactor), x, data, p0=[initialGuess], bounds=(0, np.inf))
-        del(pcov)
         scalingFactor = popt[0]
-        return scalingFactor
+        error = np.sqrt(pcov[0, 0])
+        return scalingFactor, error

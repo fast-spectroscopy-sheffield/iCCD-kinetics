@@ -416,6 +416,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.noOverlapError()
 
     def joinMethod(self):
+        sfs = pd.DataFrame(index=self.kineticsDict.keys(), columns=['time', 'sf', 'error'])
         for index in self.kineticsDict.keys():
             if index == 1:
                 joinedKinetic = self.kineticsDict[index]
@@ -429,12 +430,17 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
                 toJoinArray = np.array(toJoin[overlappedTime])
                 overlappedPair = (alreadyJoinedArray, toJoinArray)
                 kspl = KineticSplice(overlappedPair)
-                scalingFactor = kspl.calculateScalingFactor()
+                scalingFactor, scalingFactorError = kspl.calculateScalingFactor()
+                sfs.loc[index, 'time'] = overlappedTime
+                sfs.loc[index, 'sf'] = scalingFactor
+                sfs.loc[index, 'error'] = scalingFactorError
                 self.plot_joins(index, joinedKinetic.index.values, overlappedPair, overlappedTime, scalingFactor)
                 toJoin = toJoin*scalingFactor
                 self.overlappingTimesList.append(str(overlappedTime))
                 joinedKinetic.drop(joinedKinetic.columns[joinedKinetic.columns >= overlappedTime], axis=1, inplace=True)
                 joinedKinetic = joinedKinetic.join(toJoin)
+                sfs.index.name = 'join'
+        sfs.to_csv(os.path.join(self.directory, 'scaling_factors.csv'), header=True, index=True)
         self.completeKinetic = joinedKinetic
         self.dataToPlot = self.completeKinetic.copy()
         self.setupTimeSlicePlot()
