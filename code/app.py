@@ -49,6 +49,8 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.startTimesListWidget.itemClicked.connect(self.startTimeSelectionChanged)
         self.gateStepListWidget.itemClicked.connect(self.gateStepSelectionChanged)
         self.backgroundFilesListWidget.itemClicked.connect(self.backgroundListSelectionChanged)
+        self.backgroundCheckBox.clicked.connect(self.backgroundCheckBoxSync)
+        self.backgroundCheckBoxSync() # Sync up and apply correct formatting immediately
         self.moveUpButton.clicked.connect(self.moveRowUp)
         self.moveDownButton.clicked.connect(self.moveRowDown)
         self.deleteButton.clicked.connect(self.deleteRow)
@@ -80,7 +82,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.delimiterComboBox.addItem(',')
         self.delimiterComboBox.addItem(':')
         self.delimiterComboBox.addItem(';')
-        self.delimiterComboBox.setCurrentIndex(0)
+        self.delimiterComboBox.setCurrentIndex(1) # set to comma to start with
 
 ###############################################################################
 #########################    GENERAL METHODS    ###############################
@@ -124,6 +126,7 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         self.autoscaleCheckBox.setEnabled(False)
         self.scaleButton.setEnabled(False)
         self.displayStatus('application reset', 'blue', msecs=4000)
+
 
 ###############################################################################
 ########################    FILE LOADING METHODS    ###########################
@@ -207,11 +210,28 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.addItemToList(self.firstKineticGateStepListWidget, self.placeMarker, editable=True)
             self.kineticsFilepathsDict[os.path.basename(kfname)] = kfname
             if not self.backgroundCheckBox.isChecked():
-                bfname = QtWidgets.QFileDialog.getOpenFileName(self, 'load background', self.directory, filetypes)[0]
+                bfname = QtWidgets.QFileDialog.getOpenFileName(self, 'load first background', self.directory, filetypes)[0]
                 if bfname != '':
                     self.directory = os.path.dirname(bfname)
                     self.addItemToList(self.firstKineticBackgroundFileListWidget, os.path.basename(bfname))
                     self.backgroundFilepathsDict[os.path.basename(kfname)] = bfname
+
+    def backgroundCheckBoxSync(self):
+        '''
+        Effectively monitors whether the 1st background checkbox is enabled
+        or not, and accordingly greys out the relevant bits, to make it a bit
+        clearer for the user.
+        '''
+        if self.backgroundCheckBox.isChecked() == True:
+            self.firstKineticBackgroundFileListWidget.setEnabled(False)
+            self.firstKineticBackgroundFileListWidget.setStyleSheet('color: rgb(204, 204, 204)')
+            self.firstKineticBackgroundFileListWidgetLabel.setEnabled(False)
+            self.firstKineticBackgroundFileListWidgetLabel.setText('1st Background File (not used, since above is checked)')
+        else:
+            self.firstKineticBackgroundFileListWidget.setEnabled(True)
+            self.firstKineticBackgroundFileListWidget.setStyleSheet('color: rgb(0, 0, 0)')
+            self.firstKineticBackgroundFileListWidgetLabel.setEnabled(True)
+            self.firstKineticBackgroundFileListWidgetLabel.setText('1st Background File (used, since above is NOT checked)')
 
     def kineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
