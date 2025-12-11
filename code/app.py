@@ -193,8 +193,12 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             self.calibrationFileLineEdit.setText(fname)
             try:
                 self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',', squeeze=True)
-            except Exception:
+                # self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',').squeeze('columns')
+                # @note You may want to use the 2nd here if you don't use the environment...
+            except Exception as e:
+                print(e)
                 self.fileLoadError()
+
 
     def firstKineticBrowse(self):
         filetypes = 'ASCII (*.asc)'
@@ -352,6 +356,8 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             kinetic.dropna(axis=1, inplace=True)
             try:
                 background = pd.read_csv(backgroundFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)[1]
+                # @todo Kinetic backgrounds currently wasteful as only first in series used
+                # Maybe incorporate averaging or by-element-subtraction?
             except Exception:
                 return False
             self.kineticsDict[index+2] = [kinetic, kineticStartTime, kineticGateStep, background]
@@ -443,9 +449,12 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             else:
                 toJoin = self.kineticsDict[index]
                 overlappedTimes = np.intersect1d(np.array(joinedKinetic.columns), np.array(toJoin.columns))
+                # print('overlappedTimes = ' + str(overlappedTimes))
                 if overlappedTimes.size == 0:
                     return False
+                #:print('min(overlappedTimes) = ' + str(min(overlappedTimes)))
                 overlappedTime = min(overlappedTimes)
+                # @note only the earliest of the overlapped times is overlapped
                 alreadyJoinedArray = np.array(joinedKinetic[overlappedTime])
                 toJoinArray = np.array(toJoin[overlappedTime])
                 overlappedPair = (alreadyJoinedArray, toJoinArray)

@@ -44,3 +44,5 @@ You can now visualise the joined kinetic using the two graphs, save the data usi
 #### Known Issues
 
 There is a problem with screen resolutions for the GUI. If the GUI looks weird on your screen, please let me know and I'll try to fix it for you.
+
+For **backgrounds**, in the lab, if a 'Kinetic' is taken instead of 'Accumulate', it will only use the first 'column' in the background kinetic series for background subtraction. Basically taking 'Kinetic' instead of 'Accumulate' is presently a waste of lab time. Maybe background-averaging or by-column-background-subtration needs implementing into the code.
