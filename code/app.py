@@ -192,8 +192,9 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
         if fname != '':
             self.calibrationFileLineEdit.setText(fname)
             try:
-                # self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',', squeeze=True)
-                self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',').squeeze('columns')
+                self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',', squeeze=True)
+                # self.calibration = pd.read_csv(fname, index_col=0, header=None, sep=',').squeeze('columns')
+                # @note You may want to use the 2nd here if you don't use the environment...
             except Exception as e:
                 print(e)
                 self.fileLoadError()
@@ -355,6 +356,8 @@ class App(QtWidgets.QMainWindow, Ui_MainWindow):
             kinetic.dropna(axis=1, inplace=True)
             try:
                 background = pd.read_csv(backgroundFilePath, index_col=0, header=None, nrows=1024, sep=delimiter)[1]
+                # @todo Kinetic backgrounds currently wasteful as only first in series used
+                # Maybe incorporate averaging or by-element-subtraction?
             except Exception:
                 return False
             self.kineticsDict[index+2] = [kinetic, kineticStartTime, kineticGateStep, background]
